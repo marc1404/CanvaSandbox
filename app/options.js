@@ -1,5 +1,5 @@
 module.exports = {
-    circles: 100,
+    circles: 10,
     radius: {
         min: 20,
         max: 40

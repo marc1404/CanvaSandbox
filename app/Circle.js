@@ -1,59 +1,65 @@
 var drawCircle = require('./drawCircle');
+var uniqueId = require('./uniqueId');
 
 module.exports = class Circle {
 
     constructor(position, direction, radius, color){
+        this.id = uniqueId();
         this.position = position;
         this.direction = direction;
         this.radius = radius;
         this.color = color;
-        this.intendedDirection = this.direction;
-        this.isAdjustingDirection = false;
     }
 
-    update(boundaries){
-        this.chooseDirection();
-        this.adjustDirection();
-        this.updatePosition();
+    update(boundaries, circles){
+        this.applyForceToOther(circles);
+        this.position.add(this.direction);
+        this.checkBoundaries(this.radius, boundaries.width - this.radius, this.radius, boundaries.height - this.radius);
     }
 
     draw(ctx){
         drawCircle(ctx, this.position, this.radius, this.color);
     }
 
-    /* public */
-    /* private */
+    checkBoundaries(minX, maxX, minY, maxY){
+        var bounceForce = 0.005;
 
-    adjustDirection(){
-        if(this.hasIntendedDirection()){
-            this.isAdjustingDirection = false;
-        }else{
-            this.direction.add(this.adjustStep);
+        if(this.position.x < minX){
+            this.direction.x += (minX - this.position.x) * bounceForce;
+        }else if(this.position.x > maxX){
+            this.direction.x += (maxX - this.position.x) * bounceForce;
+        }
+
+        if(this.position.y < minY){
+            this.direction.y += (minY - this.position.y) * bounceForce;
+        }else if(this.position.y > maxY){
+            this.direction.y += (maxY - this.position.y) * bounceForce;
         }
     }
 
-    chooseDirection(){
-        if(this.isAdjustingDirection || Math.random() > 0.01){
-            return;
-        }
+    applyForceToOther(circles){
+        circles.forEach(circle => {
+           if(circle.id !== this.id){
+               var distance = circle.position.distance(this.position);
+               var minDistance = circle.radius + this.radius;
 
-        this.intendedDirection = new Victor(-2 + Math.random() * 4, -2 + Math.random() * 4);
-        this.adjustStep = this.intendedDirection.clone().subtract(this.direction).divide(new Victor(100, 100));
-        this.isAdjustingDirection = true;
-    }
+               if(distance < minDistance){
+                   circle.direction.add(circle.position.clone().subtract(this.position).multiply(new Victor(0.0005, 0.0005)));
 
-    updatePosition(){
-        this.position.add(this.direction);
-    }
+                   if(this.radius > circle.radius && circle.radius > 0){
+                       circle.radius -= 0.5;
 
-    hasIntendedDirection(){
-        if(Math.round(this.direction.x) === Math.round(this.intendedDirection.x)){
-            if(Math.round(this.direction.y) === Math.round(this.intendedDirection.y)){
-                return true;
-            }
-        }
+                       if(circle.radius < 0){
+                           this.radius += circle.radius * -1;
+                           circle.radius = 0;
+                           return;
+                       }
 
-        return false;
+                       this.radius += 0.5;
+                   }
+               }
+           }
+        });
     }
 
 };

@@ -1,8 +1,10 @@
 var options = require('./options');
 var generateCircles = require('./generateCircles');
 var canvas = document.getElementById('canvas');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
 var ctx = canvas.getContext('2d');
 var circles = generateCircles(options, createBoundaries());
 
@@ -14,7 +16,7 @@ function animate(){
     ctx.clearRect(0, 0, boundaries.width, boundaries.height);
 
     circles.forEach(circle => {
-        circle.update(boundaries);
+        circle.update(boundaries, circles);
         circle.draw(ctx);
     });
 
@@ -24,6 +26,14 @@ function animate(){
 function createBoundaries(){
     return {
         width: canvas.width,
-        height: canvas.height
+        height: canvas.height,
+        isInside: function(point){
+            return point.x >= 0 && point.x <= canvas.width && point.y >= 0 && point.y <= canvas.height;
+        }
     };
+}
+
+function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 }
